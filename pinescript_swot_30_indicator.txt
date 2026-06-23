@@ -1,0 +1,82 @@
+//@version=5
+indicator(title="SWOT 30", overlay=true)
+
+
+
+
+src = close
+out = ta.ema(src, 12)
+mycolor =  color.blue
+
+
+
+
+
+src2 = close
+out2 = ta.ema(src2, 26)
+mycolor2 = color.red
+
+//plot(out, "out", style=plot.style_line, linewidth=2, color=color.blue)
+//plot(out2, "out2", style=plot.style_line, linewidth=2, color=color.orange)
+
+//gk
+BuyCondition = ta.crossover(out, out2)
+SellCondition = ta.crossunder(out, out2)
+
+last_signal = 0
+Buy_final = BuyCondition and (nz(last_signal[1]) == 0 or nz(last_signal[1]) == -1)
+Sell_final = SellCondition and (nz(last_signal[1]) == 0 or nz(last_signal[1]) == 1)
+last_signal := Buy_final ? 1 : Sell_final ? -1 : last_signal[1]
+
+//plotshape(Buy_final, style=shape.triangleup, location=location.belowbar, color=color.new(#0814BF, 0), size=size.small)
+//plotshape(Sell_final, style=shape.triangledown, location=location.abovebar, color=color.new(#BF0000, 0), size=size.small)
+
+BuyHigh = ta.valuewhen(Buy_final, high, 0)
+ShortLow = ta.valuewhen(Sell_final, low, 0)
+
+eBuy = last_signal > 0 and close > BuyHigh
+eShort = last_signal < 0 and close < ShortLow
+
+LastSignal = 0
+Buy = eBuy and (nz(LastSignal[1]) == 0 or nz(LastSignal[1]) == -1)
+Short = eShort and (nz(LastSignal[1]) == 0 or nz(LastSignal[1]) == 1)
+LastSignal := Buy ? 1 : Short ? -1 : LastSignal[1]
+
+buyprice = ta.valuewhen(Buy, high, 0)
+sellprice = ta.valuewhen(Short, low, 0)
+
+bfirm = ta.crossover(close, buyprice)
+sfirm = ta.crossunder(close, sellprice)
+
+Exrem_Buy_Sell(BUY,SELL) =>
+
+    buycond = BUY and BUY[1]==0
+    sellcond = SELL and SELL[1]==0
+
+    bullish = ta.barssince(buycond) < ta.barssince(sellcond)
+    bearish = ta.barssince(sellcond) < ta.barssince(buycond)
+
+    buym = bearish[1]and buycond
+    sellm = bullish[1] and sellcond
+
+    [buym,sellm]
+
+[cbuy,ccb] = Exrem_Buy_Sell(bfirm,Buy)
+[csell,ccs] = Exrem_Buy_Sell(sfirm,Short)
+
+plotshape(Buy, style=shape.labelup, location=location.belowbar, color=color.new(#0814BF, 0), title='Buy label', text='X', textcolor=color.new(color.white, 0))
+plotshape(Short, style=shape.labeldown, location=location.abovebar, color=color.new(#BF0000, 0), title='Sell label', text='X', textcolor=color.new(color.white, 0))
+
+//plotshape(cbuy, style=shape.labelup, location=location.belowbar, color=color.new(#0814BF, 0), title='Buy label', text='BUY', textcolor=color.new(color.white, 0))
+//plotshape(csell, style=shape.labeldown, location=location.abovebar, color=color.new(#BF0000, 0), title='Sell label', text='SELL', textcolor=color.new(color.white, 0))
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+if Buy 
+    alert('SWOT 30 Alert \n\n'+syminfo.ticker+'\n \nBUY SIGNAL\n \nAt price  '+ str.tostring(close)+'\n\nTime frame :=  '+timeframe.period+'',alert.freq_once_per_bar_close)
+
+if Short
+    alert('SWOT 30 Alert \n\n'+syminfo.ticker+'\n \nSELL SIGNAL\n \nAt price  '+ str.tostring(close)+'\n\nTime frame :=  '+timeframe.period+'',alert.freq_once_per_bar_close)
+
+
